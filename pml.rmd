@@ -116,7 +116,7 @@ modelFit <- randomForest(classe ~. , data=TRN)
 predictions <- predict(modelFit, newdata=TST)
 confusionMatrix(predictions, TST$classe)
 ```
-The random forest model is far superior than the previously run models judged by the cross-validation accuracy. As the accuracy is sufficiently high (Accuracy rate of .9969) no further models will be tested.
+The random forest model is far superior than the previously run models judged by the cross-validation accuracy. As the accuracy is sufficiently high (Accuracy rate of .997) no further models will be tested.
 
 ```{r}
 myFinaModel <-modelFit
@@ -127,7 +127,7 @@ myFinaModel <-modelFit
 
 The expected out-of-sample error is defined as 1-accuracy ration from the cross-validation data. Accuracy itself is the share of correct classified cases over the total number of cases in the testing data. 
 As the cross-validation procedure is run on a test set that was untouched during training the model, the out-of sample error obtained on the test set should be ab unbiased estimate of the model's accuracy. 
-The final model built to predict the quality of the exercise has an accuracy rate of 0.9969, when applied on the test sample. That means that the estimated out-of sample-error is (1-0.99) is 0.0031 or 0.31%. 
+The final model built to predict the quality of the exercise has an accuracy rate of 0.997, when applied on the test sample. That means that the estimated out-of sample-error is (1-0.997) is 0.003 or 0.3%. 
 
 ##### Predict the 20 test cases and export the files to be uploaded
 ```{r}
