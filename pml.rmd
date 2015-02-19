@@ -1,0 +1,148 @@
+---
+title: "Practical Machine Learning Project"
+author: "vnkt"
+date: "Monday, February 16, 2015"
+output: html_document
+---
+
+### Introduction
+Using activity tracking devices it becomes increasingly possible to collect a large amount of data about personal activity. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, asked to perform barbell lifts correctly and incorrectly in 5 different ways.  
+
+### Executive summary 
+Using data described below, we'll show that predicting the quality of the physically excersise is indeed possible. Several models have been built before indentifying the one delivering highest accuracy. The final model predicts with 99% accuracy the outcome on a 30% validation set. Further, the model is applied on 20 test cases and they were submitted for grading. 
+
+### Data sets   
+
+The data on which this analysis is described on the original study page [here] (http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises)
+
+The data sets used in the current project can be obtainedon the following links: 
+[Training data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
+[Test data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
+
+*Please note that the data should be first downloaded and placed in your working directory inorder for the code to run.*
+
+### Reading the data   
+
+First data packages will be loaded used in the code. Then the raw data is read taking into account some values indicating missing values. 
+```{r}
+library(data.table); library(caret); library(rattle); library(randomForest)
+training <- read.csv("pml-training.csv", na.strings=c("NA","#DIV/0!",""))
+testing <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!",""))
+```
+
+### Data preprocessing 
+
+-  Running the `summary(training)` command shows that there are quite a few variable with many NA's(missing values). As this might have negatve impact on running machine learning models, those variables will be dropped out both from the training and testin data sets. 
+- Addtionaly, variables not considered predictors will also be removed (timestamps, user names etc.) 
+- And finally variables with near zero variance will also be dropped
+
+```{r}
+# List of vars to keep : Complete cases
+    keep <- colnames(training)[complete.cases(t(training))]
+# List of vars to keep : drop non-relevant vars
+    keep <- keep[keep != c("X", "user_name", keep[grepl("timestamp", keep)])]
+# List of vars to keep : drop nzv vars
+    NZV <- nearZeroVar(training, saveMetrics=TRUE)
+    keep <-keep[!(keep %in% rownames(NZV[NZV$nzv,]))]
+# Trim the data
+    training <- training[keep]
+```
+After trimming the data like this, we are left with 54 potential predictors with complete data.
+
+
+### Cross-validation / Partition the data   
+Cross-validation will be done by splitting randomly the data into training data (70%) of the original and testing data (25%). The models produced on the training subset will be evaluated on the testing set. 
+```{r}
+set.seed(123)
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+TRN <- training[inTrain, ]; TST <- training[-inTrain, ]
+dim(training); dim(TRN); dim(TST)
+```
+
+
+### Model 1: A Decision Tree Model   
+
+Using the `rpart` method a decision tree model will be first built. 
+
+```{r, echo=FALSE}
+set.seed(123)
+modelFit <- train(classe ~., data = TRN, method="rpart")
+fancyRpartPlot(modelFit$finalModel)
+```
+
+#### Validating  Model 1 on the test sample    
+```{r}
+predictions <- predict(modelFit, newdata=TST)
+confusionMatrix(predictions, TST$classe)
+```
+The decision tree model shows very poor performance as indicated by the Accuracy rate of 0.5985.
+
+
+
+### Model 2: A Decision Tree Model with prepocessing  
+
+A second model will be built, again as decision tree, only this time pre-proceced data will be used as input using the principal component method. 
+
+```{r, echo=FALSE}
+set.seed(123)
+preProc <-preProcess( TRN[,-length(TRN)], method="pca")
+TRN.PCA <- predict(preProc, TRN[,-length(TRN)] )
+
+modelFit <- train(TRN$classe ~., data = TRN.PCA, method="rpart")
+fancyRpartPlot(modelFit$finalModel)
+```
+
+#### Validating  Model 2 on the (preprocessed) test sample   
+```{r}
+TST.PCA <- predict(preProc, TST[,-length(TST)] )
+
+predictions <- predict(modelFit, newdata=TST.PCA)
+confusionMatrix(predictions, TST$classe)
+```
+This model shows even lower performance. Accuracy rate is  0.3558. 
+This route will be abandoned and a model built with other methods will be attempted. 
+
+
+
+### Model 3: Random Forest   
+The model is run using the default parameters. 
+```{r, echo=FALSE}
+set.seed(123)
+modelFit <- randomForest(classe ~. , data=TRN)
+
+```
+#### Validating  Model 3 on the test sample
+```{r}
+predictions <- predict(modelFit, newdata=TST)
+confusionMatrix(predictions, TST$classe)
+```
+The random forest model is far superior than the previously run models judged by the cross-validation accuracy. As the accuracy is sufficiently high (Accuracy rate of .9969) no further models will be tested.
+
+```{r}
+myFinaModel <-modelFit
+```
+
+
+### Expected Out of Sample Error
+
+The expected out-of-sample error is defined as 1-accuracy ration from the cross-validation data. Accuracy itself is the share of correct classified cases over the total number of cases in the testing data. 
+As the cross-validation procedure is run on a test set that was untouched during training the model, the out-of sample error obtained on the test set should be ab unbiased estimate of the model's accuracy. 
+The final model built to predict the quality of the exercise has an accuracy rate of 0.9969, when applied on the test sample. That means that the estimated out-of sample-error is (1-0.99) is 0.0031 or 0.31%. 
+
+##### Predict the 20 test cases and export the files to be uploaded
+```{r}
+answers = predict(myFinaModel, newdata=testing)
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+
+file.copy("pml.html", "./gh-pages/index.html", overwrite=TRUE)
+```
+
