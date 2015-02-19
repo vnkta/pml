@@ -51,7 +51,7 @@ After trimming the data like this, we are left with 54 potential predictors with
 
 
 ### Cross-validation / Partition the data   
-Cross-validation will be done by splitting randomly the data into training data (70%) of the original and testing data (25%). The models produced on the training subset will be evaluated on the testing set. 
+Cross-validation will be done by splitting randomly the data into training data (70%) of the original and testing data (30%). The models produced on the training subset will be evaluated on the testing set. 
 ```{r}
 set.seed(123)
 inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
@@ -129,7 +129,8 @@ The expected out-of-sample error is defined as 1-accuracy ration from the cross-
 As the cross-validation procedure is run on a test set that was untouched during training the model, the out-of sample error obtained on the test set should be ab unbiased estimate of the model's accuracy. 
 The final model built to predict the quality of the exercise has an accuracy rate of 0.9969, when applied on the test sample. That means that the estimated out-of sample-error is (1-0.99) is 0.0031 or 0.31%. 
 
-##### Predict the 20 test cases and export the files to be uploaded
+
+#### Predict the 20 test cases and export the files to be uploaded
 ```{r}
 answers = predict(myFinaModel, newdata=testing)
 
@@ -143,6 +144,6 @@ pml_write_files = function(x){
 
 pml_write_files(answers)
 
-file.copy("pml.html", "./gh-pages/index.html", overwrite=TRUE)
+file.copy("pml.html", "index.html", overwrite=TRUE)
 ```
 
