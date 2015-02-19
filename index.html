@@ -115,7 +115,7 @@ testing &lt;- read.csv(&quot;pml-testing.csv&quot;, na.strings=c(&quot;NA&quot;,
 </div>
 <div id="cross-validation-partition-the-data" class="section level3">
 <h3>Cross-validation / Partition the data</h3>
-<p>Cross-validation will be done by splitting randomly the data into training data (70%) of the original and testing data (25%). The models produced on the training subset will be evaluated on the testing set.</p>
+<p>Cross-validation will be done by splitting randomly the data into training data (70%) of the original and testing data (30%). The models produced on the training subset will be evaluated on the testing set.</p>
 <pre class="r"><code>set.seed(123)
 inTrain &lt;- createDataPartition(y=training$classe, p=0.7, list=FALSE)
 TRN &lt;- training[inTrain, ]; TST &lt;- training[-inTrain, ]
